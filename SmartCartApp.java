@@ -9,16 +9,10 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.text.*;
 
-/**
- * SmartCartApp - Single-file polished GUI shopping app.
- * Features: Signup/Login, Electronics page, Clothing page, Cart (view/remove),
- * Checkout (delivery/payment/summary), Reservations (fees/refunds/purchase).
- *
- * Save as SmartCartApp.java
- */
+
 public class SmartCartApp extends JFrame {
 
-    // ---------------- Model classes ----------------
+    
     static abstract class Product {
         private final String id;
         private final String name;
@@ -74,32 +68,42 @@ public class SmartCartApp extends JFrame {
         }
     }
 
-    // ---------------- Manager ----------------
+  
     private final SmartCartManager manager = new SmartCartManager();
 
-    // ---------------- UI components ----------------
+    
     private final CardLayout cards = new CardLayout();
     private final JPanel root = new JPanel(cards);
 
-    // format
+    
     private final DecimalFormat money = new DecimalFormat("#0.00");
 
-    // colors & fonts
-    private final Color brandBlue = new Color(28, 150, 210);
-    private final Color softBlue = new Color(241, 249, 253);
+    
+    private final Color brandBlue = new Color(28, 150, 210); 
+    private final Color softBlue = new Color(241, 249, 253); 
     private final Color panelBg = new Color(250, 250, 255);
-    private final Font heading = new Font("SansSerif", Font.BOLD, 20);
-    private final Font normal = new Font("SansSerif", Font.PLAIN, 14);
+    
+    
+    private final Color buttonColor = new Color(30, 100, 150); 
+    private final Color listStripeColor = new Color(245, 245, 245); 
+    
+    
+    private final Color priceColor = new Color(16, 112, 32); 
+    private final String priceColorHex = "#107020"; 
+    
+    
+    private final Font heading = new Font("Arial", Font.BOLD, 22); 
+    private final Font normal = new Font("Arial", Font.PLAIN, 15); 
 
-    private static final double COD_FEE = 20.0; // Cash on delivery fee
+    private static final double COD_FEE = 20.0; 
 
-    // ---- Budget UI/state ----
+    
     private double userBudget = 0.0;
     private boolean budgetSet = false;
     private final JProgressBar budgetBar = new JProgressBar(0, 100);
     private final JLabel budgetLabel = new JLabel("Budget not set");
 
-    // current logged user (just store username string for UI context)
+    
     private String currentUser = null;
 
     public SmartCartApp() {
@@ -112,7 +116,7 @@ public class SmartCartApp extends JFrame {
     }
 
     private void initUI() {
-        // root panel with cards
+        
         root.setBackground(Color.WHITE);
         root.add(buildWelcomePanel(), "welcome");
         root.add(buildSignupPanel(), "signup");
@@ -127,15 +131,117 @@ public class SmartCartApp extends JFrame {
         add(root);
         cards.show(root, "welcome");
     }
+    
+    
+    private String colorizePrices(String text, String priceColorHex) {
+      
+        String delimiter = " — ";
+        String currency = "AED ";
+        String fullPattern = delimiter + currency;
 
-    // utility: styled button
+        
+        if (text.contains(fullPattern)) {
+           
+            int sepIndex = text.indexOf(fullPattern);
+            
+           
+            String namePart = text.substring(0, sepIndex + delimiter.length()); 
+           
+            String priceAndSuffix = text.substring(sepIndex + delimiter.length()); 
+            
+            
+            int pipeIndex = priceAndSuffix.indexOf('|');
+            
+            if (pipeIndex == -1) {
+                
+                return "<html>" + namePart + "<font color=\"" + priceColorHex + "\">" + priceAndSuffix + "</font></html>";
+            } else {
+                
+                String priceVal = priceAndSuffix.substring(0, pipeIndex); 
+                
+                String suffix = priceAndSuffix.substring(pipeIndex); 
+                
+                String middleColored = namePart + "<font color=\"" + priceColorHex + "\">" + priceVal + "</font>" + suffix;
+                
+                
+                String feePattern = "Fee: " + currency;
+                int feeIndex = middleColored.lastIndexOf(feePattern);
+                if (feeIndex != -1) {
+                    
+                    String feePrefix = middleColored.substring(0, feeIndex + feePattern.length()); 
+                    
+                    String feeValue = middleColored.substring(feeIndex + feePattern.length()); 
+                    
+                   
+                    String feeBlockStart = "Fee: ";
+                    int newFeeIndex = middleColored.lastIndexOf(feeBlockStart);
+                    if (newFeeIndex != -1) {
+                        String prefixBeforeFee = middleColored.substring(0, newFeeIndex + feeBlockStart.length()); // "... | Fee: "
+                        String feeValueWithCurrency = middleColored.substring(newFeeIndex + feeBlockStart.length()); // "AED 5.00"
+
+                        return "<html>" + prefixBeforeFee + "<font color=\"" + priceColorHex + "\">" + feeValueWithCurrency + "</font></html>";
+                    }
+                }
+                
+                
+                return "<html>" + middleColored + "</html>";
+            }
+        }
+        
+        
+        return "<html>" + text + "</html>";
+    }
+
+    
+    private class ZebraListRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                      boolean isSelected, boolean cellHasFocus) {
+            
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            
+            
+            setText(colorizePrices(value.toString(), priceColorHex));
+
+            setFont(normal);
+            
+            
+            if (index % 2 == 0) {
+                setBackground(listStripeColor);
+            } else {
+                setBackground(list.getBackground());
+            }
+            
+            
+            if (isSelected) {
+                setBackground(buttonColor.darker()); 
+                setForeground(Color.WHITE);
+                
+            } else {
+               
+                setForeground(Color.BLACK); 
+            }
+            
+            
+            setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+            
+            return this;
+        }
+    }
+
+   
     private JButton makeButton(String text) {
         JButton b = new JButton(text);
-        b.setBackground(brandBlue);
-        b.setForeground(Color.WHITE);
+        
+        b.setBackground(buttonColor); 
+        
+        b.setForeground(Color.WHITE); 
         b.setFocusPainted(false);
         b.setFont(normal);
-        b.setBorder(new EmptyBorder(8,16,8,16));
+        
+        b.setBorder(new EmptyBorder(10,20,10,20)); 
+        
+        b.setRolloverEnabled(false); 
         return b;
     }
 
@@ -146,12 +252,12 @@ public class SmartCartApp extends JFrame {
         return p;
     }
 
-    // ---------------- Document Filters ----------------
+    
     static class DigitFilter extends DocumentFilter {
         private final int maxLength;
         
         public DigitFilter() {
-            this.maxLength = -1; // no limit by default
+            this.maxLength = -1; 
         }
         
         public DigitFilter(int maxLength) {
@@ -203,7 +309,7 @@ public class SmartCartApp extends JFrame {
             StringBuilder sb = new StringBuilder();
             for (char c : string.toCharArray()) if (Character.isDigit(c) || c == '/') sb.append(c);
             
-            // Limit to 5 characters (MM/YY)
+            
             String filtered = sb.toString();
             if (fb.getDocument().getLength() + filtered.length() > 5) {
                 filtered = filtered.substring(0, 5 - fb.getDocument().getLength());
@@ -217,7 +323,7 @@ public class SmartCartApp extends JFrame {
             StringBuilder sb = new StringBuilder();
             for (char c : text.toCharArray()) if (Character.isDigit(c) || c == '/') sb.append(c);
             
-            // Limit to 5 characters (MM/YY)
+            
             String filtered = sb.toString();
             int newLength = fb.getDocument().getLength() - length + filtered.length();
             if (newLength > 5) {
@@ -242,7 +348,7 @@ public class SmartCartApp extends JFrame {
         if (d instanceof AbstractDocument) ((AbstractDocument)d).setDocumentFilter(new ExpiryFilter());
     }
 
-    // ---------------- Welcome ----------------
+    
     private JPanel buildWelcomePanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(softBlue);
@@ -281,7 +387,7 @@ public class SmartCartApp extends JFrame {
         return panel;
     }
 
-    // ---------------- Signup ----------------
+    
     private JPanel buildSignupPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(softBlue);
@@ -290,6 +396,8 @@ public class SmartCartApp extends JFrame {
         card.setBorder(new CompoundBorder(new EmptyBorder(24,24,24,24),
                                           new LineBorder(Color.LIGHT_GRAY, 1, true)));
         card.setBackground(Color.WHITE);
+        card.setPreferredSize(new Dimension(350, 380));
+
 
         JLabel h = new JLabel("Create an account");
         h.setFont(heading); h.setForeground(brandBlue); h.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -310,7 +418,7 @@ public class SmartCartApp extends JFrame {
         userF.setFont(normal); passF.setFont(normal);
 
         JLabel hint = new JLabel("<html><small>Username: letters/digits/underscore, start with letter, 3-12 chars.</small></html>");
-        hint.setFont(new Font("SansSerif", Font.ITALIC, 11));
+        hint.setFont(new Font("Arial", Font.ITALIC, 11)); 
         hint.setForeground(Color.DARK_GRAY);
 
         card.add(new JLabel("Username:")); card.add(userF); card.add(hint); card.add(Box.createRigidArea(new Dimension(0,8)));
@@ -326,7 +434,7 @@ public class SmartCartApp extends JFrame {
                 return;
             }
 
-            // username pattern: start with letter, letters/digits/underscore, 3-12 chars
+            
             if (!u.matches("^[A-Za-z][A-Za-z0-9_]{2,11}$")) {
                 JOptionPane.showMessageDialog(this, "Username invalid. Must start with a letter, 3-12 chars, letters/digits/underscore.");
                 return;
@@ -343,6 +451,10 @@ public class SmartCartApp extends JFrame {
         });
 
         JButton back = new JButton("Back"); back.setFont(normal);
+        
+        back.setBackground(buttonColor);
+        back.setForeground(Color.WHITE);
+        back.setRolloverEnabled(false);
         back.addActionListener(e -> cards.show(root, "welcome"));
 
         JPanel btnRow = new JPanel(); btnRow.setOpaque(false);
@@ -353,7 +465,7 @@ public class SmartCartApp extends JFrame {
         return panel;
     }
 
-    // ---------------- Login ----------------
+    
     private JPanel buildLoginPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(softBlue);
@@ -397,7 +509,7 @@ public class SmartCartApp extends JFrame {
                 if (manager.getPasswords().get(idx).equals(p)) {
                     userF.setText(""); passF.setText("");
                     currentUser = u;
-                    // ask for budget on login
+                    
                     askForBudget();
                     cards.show(root, "home");
                     return;
@@ -407,6 +519,10 @@ public class SmartCartApp extends JFrame {
         });
 
         JButton back = new JButton("Back"); back.setFont(normal);
+        
+        back.setBackground(buttonColor);
+        back.setForeground(Color.WHITE);
+        back.setRolloverEnabled(false);
         back.addActionListener(e -> cards.show(root, "welcome"));
         JPanel btnRow = new JPanel(); btnRow.setOpaque(false);
         btnRow.add(login); btnRow.add(Box.createRigidArea(new Dimension(8,0))); btnRow.add(back);
@@ -416,7 +532,7 @@ public class SmartCartApp extends JFrame {
         return panel;
     }
 
-    // ask for budget at login
+    
     private void askForBudget() {
         String s = JOptionPane.showInputDialog(this,
                 "Enter your budget limit (AED):", "Set Budget", JOptionPane.PLAIN_MESSAGE);
@@ -464,7 +580,7 @@ public class SmartCartApp extends JFrame {
         budgetLabel.setText("Budget: AED " + money.format(userBudget) + " | In cart: AED " + money.format(total));
     }
 
-    // ---------------- Home ----------------
+    
     private JPanel buildHomePanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(softBlue);
@@ -473,7 +589,7 @@ public class SmartCartApp extends JFrame {
         title.setFont(heading); title.setForeground(brandBlue);
         title.setBorder(new EmptyBorder(16,16,8,16));
 
-        // budget bar + label at top of home
+        
         JPanel topRow = new JPanel(new BorderLayout());
         topRow.setOpaque(false);
         budgetBar.setPreferredSize(new Dimension(400, 26));
@@ -484,7 +600,7 @@ public class SmartCartApp extends JFrame {
         topRow.add(budgetBar, BorderLayout.EAST);
         topRow.setBorder(new EmptyBorder(8,12,8,12));
 
-        JPanel grid = new JPanel(new GridLayout(3,2,16,16)); // more space for Reservations
+        JPanel grid = new JPanel(new GridLayout(3,2,16,16)); 
         grid.setBorder(new EmptyBorder(24,24,24,24));
         grid.setOpaque(false);
 
@@ -492,8 +608,19 @@ public class SmartCartApp extends JFrame {
         JButton clothingBtn = makeButton("Clothing");
         JButton viewCartBtn = makeButton("View Cart");
         JButton checkoutBtn = makeButton("Checkout");
+        
         JButton logoutBtn = new JButton("Log out"); logoutBtn.setFont(normal);
+        
+        logoutBtn.setBackground(buttonColor);
+        logoutBtn.setForeground(Color.WHITE);
+        logoutBtn.setRolloverEnabled(false);
+        
         JButton setBudgetBtn = new JButton("Set/Change Budget"); setBudgetBtn.setFont(normal);
+        
+        setBudgetBtn.setBackground(buttonColor);
+        setBudgetBtn.setForeground(Color.WHITE);
+        setBudgetBtn.setRolloverEnabled(false);
+        
         JButton reservationsBtn = makeButton("Reservations");
 
         electronicsBtn.addActionListener(e -> cards.show(root, "electronics"));
@@ -502,7 +629,7 @@ public class SmartCartApp extends JFrame {
         checkoutBtn.addActionListener(e -> cards.show(root, "checkout"));
         reservationsBtn.addActionListener(e -> cards.show(root, "reservations"));
         logoutBtn.addActionListener(e -> {
-            // clear budget and cart on logout
+           
             manager.getCart().clear();
             budgetSet = false; userBudget = 0.0;
             currentUser = null;
@@ -525,7 +652,7 @@ public class SmartCartApp extends JFrame {
         return panel;
     }
 
-    // ---------------- Electronics Page ----------------
+    
     private JPanel buildElectronicsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(softBlue);
@@ -535,10 +662,11 @@ public class SmartCartApp extends JFrame {
 
         DefaultListModel<Product> model = new DefaultListModel<>();
         JList<Product> list = new JList<>(model);
-        list.setFont(normal);
+        
+        list.setCellRenderer(new ZebraListRenderer());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // refresh based on inventory + budget
+        
         Runnable refresh = () -> {
             model.clear();
             for (Product p : manager.getInventory()) {
@@ -554,13 +682,18 @@ public class SmartCartApp extends JFrame {
         JButton add = makeButton("Add to Cart");
         JButton reserve = makeButton("Reserve");
         JButton back = new JButton("Back"); back.setFont(normal);
+        
+        back.setBackground(buttonColor);
+        back.setForeground(Color.WHITE);
+        back.setRolloverEnabled(false);
+        
         JButton viewCart = makeButton("View Cart");
 
         add.addActionListener(e -> {
             Product sel = list.getSelectedValue();
             if (sel==null) { JOptionPane.showMessageDialog(this,"Select a product first."); return; }
 
-            // budget check
+            
             double current = manager.getCart().total();
             double wouldBe = current + sel.getPrice();
             if (budgetSet && wouldBe > userBudget) {
@@ -580,7 +713,7 @@ public class SmartCartApp extends JFrame {
         reserve.addActionListener(e -> {
             Product sel = list.getSelectedValue();
             if (sel==null) { JOptionPane.showMessageDialog(this,"Select a product to reserve."); return; }
-            // ask planned purchase date
+            
             String s = JOptionPane.showInputDialog(this,
                     "Enter planned purchase date (YYYY-MM-DD):", LocalDate.now().plusDays(7).toString());
             if (s==null) return;
@@ -590,7 +723,7 @@ public class SmartCartApp extends JFrame {
                     JOptionPane.showMessageDialog(this,"Planned date must be today or in future.");
                     return;
                 }
-                // fee = 10% of price, minimum 5
+                
                 double fee = Math.max(5.0, Math.round(sel.getPrice() * 0.10 * 100.0) / 100.0);
                 Reservation r = new Reservation(sel, LocalDate.now(), planned, fee);
                 manager.addReservation(r);
@@ -614,7 +747,7 @@ public class SmartCartApp extends JFrame {
         btns.setBorder(new EmptyBorder(12,12,12,12));
         panel.add(btns, BorderLayout.SOUTH);
 
-        // refresh when this card is shown so budget changes take effect
+        
         panel.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentShown(ComponentEvent e) { refresh.run(); }
@@ -623,7 +756,7 @@ public class SmartCartApp extends JFrame {
         return panel;
     }
 
-    // ---------------- Clothing Page ----------------
+    
     private JPanel buildClothingPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(softBlue);
@@ -633,10 +766,11 @@ public class SmartCartApp extends JFrame {
 
         DefaultListModel<Product> model = new DefaultListModel<>();
         JList<Product> list = new JList<>(model);
-        list.setFont(normal);
+        
+        list.setCellRenderer(new ZebraListRenderer());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // refresh based on inventory + budget
+        
         Runnable refresh = () -> {
             model.clear();
             for (Product p : manager.getInventory()) {
@@ -652,13 +786,18 @@ public class SmartCartApp extends JFrame {
         JButton add = makeButton("Add to Cart");
         JButton reserve = makeButton("Reserve");
         JButton back = new JButton("Back"); back.setFont(normal);
+        
+        back.setBackground(buttonColor);
+        back.setForeground(Color.WHITE);
+        back.setRolloverEnabled(false);
+        
         JButton viewCart = makeButton("View Cart");
 
         add.addActionListener(e -> {
             Product sel = list.getSelectedValue();
             if (sel==null) { JOptionPane.showMessageDialog(this,"Select a product first."); return; }
 
-            // budget check
+            
             double current = manager.getCart().total();
             double wouldBe = current + sel.getPrice();
             if (budgetSet && wouldBe > userBudget) {
@@ -678,7 +817,7 @@ public class SmartCartApp extends JFrame {
         reserve.addActionListener(e -> {
             Product sel = list.getSelectedValue();
             if (sel==null) { JOptionPane.showMessageDialog(this,"Select a product to reserve."); return; }
-            // ask planned purchase date
+           
             String s = JOptionPane.showInputDialog(this,
                     "Enter planned purchase date (YYYY-MM-DD):", LocalDate.now().plusDays(7).toString());
             if (s==null) return;
@@ -688,7 +827,7 @@ public class SmartCartApp extends JFrame {
                     JOptionPane.showMessageDialog(this,"Planned date must be today or in future.");
                     return;
                 }
-                // fee = 10% of price, minimum 5
+                
                 double fee = Math.max(5.0, Math.round(sel.getPrice() * 0.10 * 100.0) / 100.0);
                 Reservation r = new Reservation(sel, LocalDate.now(), planned, fee);
                 manager.addReservation(r);
@@ -712,7 +851,7 @@ public class SmartCartApp extends JFrame {
         btns.setBorder(new EmptyBorder(12,12,12,12));
         panel.add(btns, BorderLayout.SOUTH);
 
-        // refresh when this card is shown so budget changes take effect
+        
         panel.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentShown(ComponentEvent e) { refresh.run(); }
@@ -721,7 +860,7 @@ public class SmartCartApp extends JFrame {
         return panel;
     }
 
-    // ---------------- Cart Page ----------------
+    
     private JPanel buildCartPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(softBlue);
@@ -732,9 +871,10 @@ public class SmartCartApp extends JFrame {
 
         DefaultListModel<String> model = new DefaultListModel<>();
         JList<String> list = new JList<>(model);
-        list.setFont(normal);
+       
+        list.setCellRenderer(new ZebraListRenderer());
 
-        // update function to refresh list
+        
         Runnable refresh = () -> {
             model.clear();
             for (Product p : manager.getCart().getAll()) {
@@ -746,6 +886,10 @@ public class SmartCartApp extends JFrame {
         JButton remove = makeButton("Remove Selected");
         JButton checkout = makeButton("Checkout");
         JButton back = new JButton("Back"); back.setFont(normal);
+        
+        back.setBackground(buttonColor);
+        back.setForeground(Color.WHITE);
+        back.setRolloverEnabled(false);
 
         remove.addActionListener(e -> {
             String sel = list.getSelectedValue();
@@ -774,7 +918,7 @@ public class SmartCartApp extends JFrame {
         panel.add(new JScrollPane(list), BorderLayout.CENTER);
         panel.add(btns, BorderLayout.SOUTH);
 
-        // whenever this card is shown refresh the cart
+        
         panel.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentShown(ComponentEvent e) { refresh.run(); }
@@ -782,8 +926,6 @@ public class SmartCartApp extends JFrame {
 
         return panel;
     }
-
-    // ---------------- Checkout Page ----------------
     private JPanel buildCheckoutPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(softBlue);
@@ -799,7 +941,7 @@ public class SmartCartApp extends JFrame {
         JTextField nameField = new JTextField(); nameField.setMaximumSize(new Dimension(Integer.MAX_VALUE,28));
         JTextField addressField = new JTextField(); addressField.setMaximumSize(new Dimension(Integer.MAX_VALUE,28));
         
-        // Phone field with UAE country code prefix
+        
         JPanel phonePanel = new JPanel(new BorderLayout());
         phonePanel.setOpaque(false);
         phonePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE,28));
@@ -809,7 +951,7 @@ public class SmartCartApp extends JFrame {
         countryCodeLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
         
         JTextField phoneField = new JTextField();
-        applyDigitFilter(phoneField, 9); // only digits for phone, max 9 (after +971)
+        applyDigitFilter(phoneField, 9); 
         
         phonePanel.add(countryCodeLabel, BorderLayout.WEST);
         phonePanel.add(phoneField, BorderLayout.CENTER);
@@ -822,18 +964,14 @@ public class SmartCartApp extends JFrame {
         center.add(new JLabel("Delivery address:")); center.add(addressField); center.add(Box.createRigidArea(new Dimension(0,8)));
         center.add(new JLabel("Phone number:")); center.add(phonePanel); center.add(Box.createRigidArea(new Dimension(0,8)));
         center.add(new JLabel("Payment method:")); center.add(payBox); center.add(Box.createRigidArea(new Dimension(0,12)));
-
-        // Card and UPI details
         JTextField cardNumberField = new JTextField(); cardNumberField.setMaximumSize(new Dimension(Integer.MAX_VALUE,28));
         JTextField cardExpiryField = new JTextField(); cardExpiryField.setMaximumSize(new Dimension(Integer.MAX_VALUE,28));
         JTextField cardCVVField = new JTextField(); cardCVVField.setMaximumSize(new Dimension(Integer.MAX_VALUE,28));
         JTextField upiField = new JTextField(); upiField.setMaximumSize(new Dimension(Integer.MAX_VALUE,28));
-
-        // apply numeric-only filter with length restrictions
-        applyDigitFilter(cardNumberField, 16); // card number max 16 digits
-        applyDigitFilter(cardCVVField, 3);     // CVV max 3 digits
-        applyDigitFilter(upiField, 20);        // UPI ID max 20 digits
-        applyExpiryFilter(cardExpiryField); // allow digits and '/'
+        applyDigitFilter(cardNumberField, 16); 
+        applyDigitFilter(cardCVVField, 3);     
+        applyDigitFilter(upiField, 20);        
+        applyExpiryFilter(cardExpiryField); 
 
         JPanel cardDetailsPanel = new JPanel();
         cardDetailsPanel.setOpaque(false);
@@ -850,14 +988,14 @@ public class SmartCartApp extends JFrame {
         cardDetailsPanel.setVisible(false);
         upiDetailsPanel.setVisible(false);
 
-        center.add(cardDetailsPanel);
-        center.add(upiDetailsPanel);
-
         payBox.addActionListener(e -> {
             String selected = (String) payBox.getSelectedItem();
             cardDetailsPanel.setVisible("Card Payment".equals(selected));
             upiDetailsPanel.setVisible("UPI".equals(selected));
         });
+        
+        center.add(cardDetailsPanel);
+        center.add(upiDetailsPanel);
 
         JTextArea summaryArea = new JTextArea(8,40);
         summaryArea.setEditable(false); summaryArea.setFont(normal);
@@ -870,6 +1008,9 @@ public class SmartCartApp extends JFrame {
         JButton showSummary = makeButton("Generate Summary");
         JButton placeOrder = makeButton("Place Order");
         JButton back = new JButton("Back"); back.setFont(normal);
+        back.setBackground(buttonColor);
+        back.setForeground(Color.WHITE);
+        back.setRolloverEnabled(false);
 
         showSummary.addActionListener(e -> {
             if (manager.getCart().isEmpty()) { JOptionPane.showMessageDialog(this,"Cart is empty."); return; }
@@ -898,7 +1039,6 @@ public class SmartCartApp extends JFrame {
                 JOptionPane.showMessageDialog(this,"Please fill delivery details.");
                 return;
             }
-            // phone length check - now 9 digits after +971
             if (!phone.matches("^\\d{9}$")) {
                 JOptionPane.showMessageDialog(this, "Phone must be 9 digits after +971.");
                 return;
@@ -911,7 +1051,6 @@ public class SmartCartApp extends JFrame {
                     JOptionPane.showMessageDialog(this, "Please fill all card details.");
                     return;
                 }
-                // card validations
                 String cardNum = cardNumberField.getText().trim();
                 String cvv = cardCVVField.getText().trim();
                 String exp = cardExpiryField.getText().trim();
@@ -958,7 +1097,6 @@ public class SmartCartApp extends JFrame {
                 sb.append("\nPayment: Card Payment\n");
                 sb.append("Card Number: ").append(maskCard(cardNumberField.getText().trim())).append("\n");
                 sb.append("Expiry: ").append(cardExpiryField.getText().trim()).append("\n");
-                // don't show CVV in confirmation
             } else if ("UPI".equals(pay)) {
                 sb.append("\nPayment: UPI\n");
                 sb.append("UPI ID: ").append(upiField.getText().trim()).append("\n");
@@ -996,7 +1134,6 @@ public class SmartCartApp extends JFrame {
             int mm = Integer.parseInt(mmYY.substring(0,2));
             int yy = Integer.parseInt(mmYY.substring(3,5));
             if (mm < 1 || mm > 12) return false;
-            // simple year check: allow 00-99 (could be improved)
             return true;
         } catch (Exception ex) { return false; }
     }
@@ -1005,8 +1142,6 @@ public class SmartCartApp extends JFrame {
         if (card.length() < 4) return card;
         return "**** **** **** " + card.substring(card.length()-4);
     }
-
-    // ---------------- Reservations Page ----------------
     private JPanel buildReservationsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(softBlue);
@@ -1016,7 +1151,7 @@ public class SmartCartApp extends JFrame {
 
         DefaultListModel<String> model = new DefaultListModel<>();
         JList<String> list = new JList<>(model);
-        list.setFont(normal);
+        list.setCellRenderer(new ZebraListRenderer());
 
         Runnable refresh = () -> {
             model.clear();
@@ -1046,6 +1181,9 @@ public class SmartCartApp extends JFrame {
         JButton purchaseNow = makeButton("Purchase Now (move to cart)");
         JButton details = makeButton("View Details");
         JButton back = new JButton("Back"); back.setFont(normal);
+        back.setBackground(buttonColor);
+        back.setForeground(Color.WHITE);
+        back.setRolloverEnabled(false);
 
         cancelBtn.addActionListener(e -> {
             int idx = list.getSelectedIndex();
@@ -1057,11 +1195,11 @@ public class SmartCartApp extends JFrame {
             long days = ChronoUnit.DAYS.between(LocalDate.now(), r.plannedPurchaseDate);
             double refund = 0.0;
             if (days > 7) {
-                refund = r.fee; // full refund
+                refund = r.fee; 
             } else if (days >= 0) {
-                refund = r.fee * 0.5; // 50% refund
+                refund = r.fee * 0.5; 
             } else {
-                refund = 0.0; // planned date passed
+                refund = 0.0; 
             }
             r.cancelled = true;
             JOptionPane.showMessageDialog(this, String.format("Reservation cancelled. Refund: AED %s", money.format(refund)));
@@ -1074,8 +1212,7 @@ public class SmartCartApp extends JFrame {
             Reservation r = manager.getReservations().get(idx);
             if (r.cancelled) { JOptionPane.showMessageDialog(this, "Reservation cancelled — cannot purchase."); return; }
             if (r.purchased) { JOptionPane.showMessageDialog(this, "Already purchased."); return; }
-            // add product to cart and mark purchased
-            manager.getCart().add(r.product);
+             manager.getCart().add(r.product);
             r.purchased = true;
             r.purchaseDate = LocalDate.now();
             updateBudgetUI();
@@ -1115,17 +1252,10 @@ public class SmartCartApp extends JFrame {
 
         return panel;
     }
-
-    // ---------------- Main ----------------
     public static void main(String[] args) {
         SwingUtilities.invokeLater(SmartCartApp::new);
     }
 }
-
-/**
- * SmartCartManager - Helper class that manages cart operations and products.
- * Placed after SmartCartApp so it can reference SmartCartApp.Product / Cart types.
- */
 class SmartCartManager {
 
     private final java.util.List<SmartCartApp.Product> inventory = new ArrayList<>();
@@ -1137,14 +1267,9 @@ class SmartCartManager {
     public SmartCartManager() {
         initData();
     }
-
-    // ------------------- Data Setup -------------------
     private void initData() {
-        // default users
         usernames.add("user"); passwords.add("user123");
         usernames.add("admin"); passwords.add("admin123");
-
-        // sample electronics (expanded)
         inventory.add(new SmartCartApp.Electronics("E101","Samsung Galaxy Buds 2", 249));
         inventory.add(new SmartCartApp.Electronics("E102","Apple iPad 10th Gen (64GB)", 1499));
         inventory.add(new SmartCartApp.Electronics("E103","Sony WH-1000XM4", 999));
@@ -1157,8 +1282,6 @@ class SmartCartManager {
         inventory.add(new SmartCartApp.Electronics("E110","Sony WH-1000XM5", 1399));
         inventory.add(new SmartCartApp.Electronics("E111","JBL Flip 6 Bluetooth Speaker", 399));
         inventory.add(new SmartCartApp.Electronics("E112","Google Pixel 8a", 1699));
-
-        // sample clothing (expanded)
         inventory.add(new SmartCartApp.Clothing("C201","Nike Air Max T-Shirt", 99));
         inventory.add(new SmartCartApp.Clothing("C202","Adidas Joggers", 149));
         inventory.add(new SmartCartApp.Clothing("C203","Zara Women's Top", 89));
@@ -1172,15 +1295,11 @@ class SmartCartManager {
         inventory.add(new SmartCartApp.Clothing("C211","Slim Fit Jeans", 159));
         inventory.add(new SmartCartApp.Clothing("C212","Summer Dress", 149));
     }
-
-    // ------------------- Getters -------------------
     public java.util.List<SmartCartApp.Product> getInventory() { return inventory; }
     public SmartCartApp.Cart getCart() { return cart; }
     public java.util.List<String> getUsernames() { return usernames; }
     public java.util.List<String> getPasswords() { return passwords; }
     public java.util.List<SmartCartApp.Reservation> getReservations() { return reservations; }
-
-    // ------------------- Reservation Add -------------------
     public void addReservation(SmartCartApp.Reservation r) {
         reservations.add(r);
     }
